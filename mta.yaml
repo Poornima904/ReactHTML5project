@@ -1,0 +1,80 @@
+_schema-version: "3.2"
+ID: reactapplication
+version: 0.0.1
+modules:
+- name: reactapplication-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: reactapplication-destination-service
+    parameters:
+      content-target: true
+  - name: reactapplication_html_repo_host
+    parameters:
+      service-key:
+        name: reactapplication_html_repo_host-key
+  - name: uaa_reactapplication
+    parameters:
+      service-key:
+        name: uaa_reactapplication-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: appr_reactapplication_html_repo_host
+          ServiceInstanceName: reactapplication-html5-app-host-service
+          ServiceKeyName: reactapplication_html_repo_host-key
+          sap.cloud.service: appr
+        - Authentication: OAuth2UserTokenExchange
+          Name: appr_uaa_reactapplication
+          ServiceInstanceName: reactapplication-xsuaa-service
+          ServiceKeyName: uaa_reactapplication-key
+          sap.cloud.service: appr
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: reactapplication_ui_deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: reactapplication_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - reactmodulename-content.zip
+      name: reactmodulename
+      target-path: resources/
+- name: reactmodulename
+  type: html5
+  path: reactmodulename
+  build-parameters:
+    builder: custom
+    commands:
+    - npm install
+    - npm run build
+    supported-platforms: []
+resources:
+- name: reactapplication-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      version: 1.0.0
+    service: destination
+    service-name: reactapplication-destination-service
+    service-plan: lite
+- name: reactapplication_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: reactapplication-html5-app-host-service
+    service-plan: app-host
+- name: uaa_reactapplication
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: reactapplication-xsuaa-service
+    service-plan: application
